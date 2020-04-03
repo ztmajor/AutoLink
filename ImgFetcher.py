@@ -5,7 +5,12 @@ import time
 
 import win32gui, win32ui, win32con
 
-def getScreen(hwnd, width, height):
+def getAppScreen(hwnd):
+    # 获取窗口大小
+    _left, _top, _right, _bottom = win32gui.GetWindowRect(hwnd)
+    width = _right - _left
+    height = _bottom - _top
+
     # 根据窗口句柄获取窗口的设备上下文DC（Divice Context）
     hwndDC = win32gui.GetWindowDC(hwnd)
     # 根据窗口的DC获取mfcDC
@@ -36,9 +41,10 @@ def getScreen(hwnd, width, height):
     # 生成图片
     img = numpy.frombuffer(signedIntsArray, dtype = 'uint8')
     img.shape = (height, width, 4)
+    img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
     return img
 
-def match_img(img, tem, thr):
+def match_img(img, tem):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     tem_gray = cv2.cvtColor(tem, cv2.COLOR_BGR2GRAY)
     w, h = tem_gray.shape[::-1]

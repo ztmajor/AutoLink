@@ -32,15 +32,15 @@ class LinkBlocks(Dataset):
         # 加载文件
         self.images, self.labels = self.load_csv('blocks.csv')
         # 剪裁数据
-        if mode == 'train':
-            self.images = self.images[:int(0.6 * len(self.images))]  # 将数据集的60%设置为训练数据集合
-            self.labels = self.labels[:int(0.6 * len(self.labels))]  # label的60%分配给训练数据集合
-        elif mode == 'val':
-            self.images = self.images[int(0.6 * len(self.images)):int(0.8 * len(self.images))]  # 从60%-80%的地方
-            self.labels = self.labels[int(0.6 * len(self.labels)):int(0.8 * len(self.labels))]
-        else:
-            self.images = self.images[int(0.8 * len(self.images)):]  # 从80%的地方到最末尾
-            self.labels = self.labels[int(0.8 * len(self.labels)):]
+        # if mode == 'train':
+        #     self.images = self.images[:int(0.8 * len(self.images))]  # 将数据集的60%设置为训练数据集合
+        #     self.labels = self.labels[:int(0.8 * len(self.labels))]  # label的60%分配给训练数据集合
+        # elif mode == 'test':
+        #     self.images = self.images[int(0.8 * len(self.images)):int(1.0 * len(self.images))]  # 从60%-80%的地方
+        #     self.labels = self.labels[int(0.8 * len(self.labels)):int(1.0 * len(self.labels))]
+        # else:
+        #     self.images = self.images[int(0.8 * len(self.images)):]  # 从80%的地方到最末尾
+        #     self.labels = self.labels[int(0.8 * len(self.labels)):]
 
     # 将目录下的图片路径与其对应的label写入csv文件，并将csv文件中内容读出，返回为图片名和label
     def load_csv(self, filename):
@@ -102,12 +102,11 @@ class LinkBlocks(Dataset):
         img, label = self.images[x], self.labels[x]
         img_process = transforms.Compose([
             lambda x: Image.open(x).convert('RGB'),  # 将t图片的路径转换可以处理图片数据
-            # # 进行数据加强
-            # transforms.Resize((int(self.resize * 1.25), int(self.resize * 1.25))),
+            transforms.Resize((self.resize, self.resize)),  # 将图片缩放到指定大小（h,w）或者保持长宽比并缩放最短的边到int大小
             # # 随机旋转
             # transforms.RandomRotation(15),  # 设置旋转的度数小一些，否则的话会增加网络的学习难度
             # # 中心裁剪
-            # transforms.CenterCrop(self.resize),  # 此时：既旋转了又不至于导致图片变得比较的复杂
+            # transforms.CenterCrop(self.resize), # 此时：既旋转了又不至于导致图片变得比较的复杂
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])

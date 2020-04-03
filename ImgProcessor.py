@@ -2,94 +2,86 @@ import cv2
 import numpy
 import os
 import time
-from skimage.metrics import structural_similarity
+from alexnet import Net
+import OutputSimulator as outs
+from PIL import Image
+import torch
+import torchvision.transforms as transforms
 
-ROW_NUM = 11
-COL_NUM = 8
-
-def img_sim(img1, img2):
-    # 修改为统一大小为100 * 100
-    img1 = cv2.resize(img1, (100, 100))
-    img2 = cv2.resize(img2, (100, 100))
-
-    # 转化为灰度图
-    img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
-    img2 = cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY)
-
-    score = structural_similarity(img1, img2)
-    return score
-
-def get_Foreground(img, x1, y1, x2, y2):
-    mask = numpy.zeros((img.shape[:2]), numpy.uint8)
-    bgdModel = numpy.zeros((1, 65), numpy.float64)
-    fgdModel = numpy.zeros((1, 65), numpy.float64)
-    rect = (x1, y1, x2, y2)
-    # 这里计算了5次
-    cv2.grabCut(img, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
-    # 关于where函数第一个参数是条件，满足条件的话赋值为0，否则是1。如果只有第一个参数的话返回满足条件元素的坐标。
-    mask2 = numpy.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-    img = img * mask2[:, :, numpy.newaxis]
-    return img
-
-def empty_hash(img):
-    value = ""
-    for i in range(10):
-        c = img[i ,i]
-        value += "%d,%d,%d," % (img[0], img[1], img[2])
-    print(value)
-    return value
-
-def image_hash(img):
-    value = ""
-    for i in range(1, 5):
-        c = img[i * 19, i * 19]
-        value += "%d,%d,%d," % (c[0], c[1], c[2])
-    return hash(value)
+ROW_NUM = 7
+COL_NUM = 6
+global grid_height, grid_width
 
 def createMatrix(game_area):
-    img_matrix = {}
+    global  grid_height, grid_width
+    num_matrix = {}
 
     grid_height = int(game_area.shape[0] / ROW_NUM)
     grid_width = int(game_area.shape[1] / COL_NUM)
 
+    device = torch.device('cuda')
+    transform = transforms.Compose([
+        transforms.Resize(64),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    mynet = torch.load('alexnet.pth')
+    mynet = mynet.to(device)
+    mynet.eval()
+    torch.no_grad()
+
+    classes = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+               10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+               20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+               30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+               40, 41)
+
+    num_matrix[0] = {}
+    for col in range(COL_NUM + 2):
+        num_matrix[0][col] = 0
     for row in range(ROW_NUM):
-        img_matrix[row] = {}
+        num_matrix[row + 1] = {}
+        num_matrix[row + 1][0] = 0
         for col in range(COL_NUM):
             grid_left = col * grid_width
             grid_top = row * grid_height
             grid_right = grid_left + grid_width
             grid_bottom = grid_top + grid_height
             grid_image = game_area[grid_top:grid_bottom, grid_left:grid_right]
-            #print(str(row) + "," + str(col) + ".jpg = ", image_id(grid_image))
-            img_matrix[row][col] = grid_image
-            # print(grid_left, grid_top, grid_right, grid_bottom)
-            cv2.imwrite("./IMG/test/"+str(row)+","+str(col)+".jpg", grid_image)
 
-    num_matrix = {}
-    image_map = {}
+            img = Image.fromarray(grid_image)
+            img = transform(img).unsqueeze(0)
+            img_ = img.to(device)
+            outputs = mynet(img_)
+            _, predicted = torch.max(outputs, 1)
+            # print('this picture maybe :', predicted[0],classes[predicted[0]])
 
-    # for row in range(ROW_NUM):
-    #     num_matrix[row] = {}
-    #     for col in range(COL_NUM):
-    #         this_image = img_matrix[row][col]
-    #         this_image_hash = image_hash(this_image)
-    #         if img_sim(this_image, img_matrix[0][4]) > 0.5:
-    #             print(str(row) + "," + str(col) + "相似度 = ", img_sim(this_image, img_matrix[0][4]))
-    #             num_matrix[row][col] = 0
-    #             continue
-    #         # image_map.setdefault(this_image_id, len(image_map) + 1)
-    #         # num_matrix[row][col] = image_map.get(this_image_id)
+            num_matrix[row + 1][col + 1] = classes[predicted[0]]
+            # cv2.imshow("./IMG/test/"+str(row)+","+str(col)+".jpg", grid_image)
+            # cv2.waitKey(0)
+            cv2.imwrite("./IMG/test/("+str(row+1)+","+str(col+1)+")("+ str(classes[predicted[0]])+").jpg", grid_image)
+        num_matrix[row + 1][COL_NUM + 1] = 0
+
+    num_matrix[ROW_NUM + 1] = {}
+    for col in range(COL_NUM + 2):
+        num_matrix[ROW_NUM + 1][col] = 0
 
     return num_matrix
 
 # 相对坐标换算
-# def point_loc(x1, y1, x2, y2):
-#     cx1 = game_area_left + (from_col + 0.5) * grid_width
-#     cy1 = game_area_top + (from_row + 0.5) * grid_height
-#
-#     cx2 = game_area_left + (to_col + 0.5) * grid_width
-#     cy2 = game_area_top + (to_row + 0.5) * grid_height
-#     return cx1, cy1, cx2, cy2
+def point_loc(x1, y1, x2, y2):
+    global grid_height, grid_width
+    # 200:788, 30:534]
+    game_area_left = 30
+    game_area_top = 200
+
+    cx1 = game_area_left + (y1 + 0.5) * grid_width
+    cy1 = game_area_top + (x1 + 0.5) * grid_height
+
+    cx2 = game_area_left + (y2 + 0.5) * grid_width
+    cy2 = game_area_top + (x2 + 0.5) * grid_height
+    return cx1, cy1, cx2, cy2
 
 # 数字矩阵检测块是否是背景块
 def isBack(matrix, x, y):
@@ -211,43 +203,41 @@ def removable(matrix, x1, y1, x2, y2):
     return 0
 
 # 计算对应解
-def solve_matrix(matrix):
+def solve_matrix(matrix, ):
     # 若不是零矩阵则一直循环
     #while numpy.where(matrix != 0)[0].shape[0] != 0:
     for index in range(1):
-        for x1 in range(1, ROW_NUM - 1):
-            for y1 in range(1, COL_NUM - 1):
-                for x2 in range(1, ROW_NUM - 1):
-                    for y2 in range(1, COL_NUM - 1):
+        for x1 in range(1, ROW_NUM + 1):
+            for y1 in range(1, COL_NUM + 1):
+                for x2 in range(1, ROW_NUM + 1):
+                    for y2 in range(1, COL_NUM + 1):
                         if removable(matrix, x1, y1, x2, y2) == 1:
+                            cx1, cy2, cx2, cy2 = point_loc(x1 - 1, y1-1, x2-1, y2-1)
+                            outs.eliminate(cx1 , cy2, cx2, cy2)
                             matrix[x1][y1] = 0
                             matrix[x2][y2] = 0
-                            #print(matrix)
+                            print(matrix)
 
 # 测试运行
 if __name__ == "__main__":
-    test_img = cv2.imread("./IMG/blocks/ground truth8.png")
-    # img = cv2.imread("./test/0,0.jpg")
-    # img = cv2.resize(img, (100, 100), interpolation=cv2.INTER_CUBIC)
-    # cv2.imshow("img_before", img)
-    game_area = test_img[183:1294, 45:861]
-    # cv2.imshow("test_img", test_img)
-    # img = get_Foreground(game_area, 183, 45, 1294, 861)
-    # cv2.imshow("img", img)
-    matrix = createMatrix(game_area)
-    # matrix = [
-    #     [0, 0, 0, 0, 0, 0, 0],
-    #     [0, 1, 2, 0, 3, 4, 0],
-    #     [0, 5, 6, 0, 7, 8, 0],
-    #     [0, 9, 10, 0, 11, 12, 0],
-    #     [0, 1, 12, 0, 10, 11, 0],
-    #     [0, 13, 6, 0, 13, 3, 0],
-    #     [0, 8, 2, 0, 9, 14, 0],
-    #     [0, 4, 7, 0, 5, 14, 0],
-    #     [0, 0, 0, 0, 0, 0, 0]
-    # ]
-    # solve_matrix(matrix)
-    print("done!")
+    test_img = cv2.imread("./IMG/screen.jpg")
+    game_area = test_img[200:788, 30:534]
+    # cv2.imshow("game",game_area)
     # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # print(matrix)
+    matrix = createMatrix(game_area)
+    #
+    # # matrix = [
+    # #     [0, 0, 0, 0, 0, 0, 0],
+    # #     [0, 1, 2, 0, 3, 4, 0],
+    # #     [0, 5, 6, 0, 7, 8, 0],
+    # #     [0, 9, 10, 0, 11, 12, 0],
+    # #     [0, 1, 12, 0, 10, 11, 0],
+    # #     [0, 13, 6, 0, 13, 3, 0],
+    # #     [0, 8, 2, 0, 9, 14, 0],
+    # #     [0, 4, 7, 0, 5, 14, 0],
+    # #     [0, 0, 0, 0, 0, 0, 0]
+    # # ]
+    for row in range(ROW_NUM+2):
+        print(matrix[row])
+    solve_matrix(matrix)
+    print("done!")
