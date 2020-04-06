@@ -27,9 +27,9 @@
 - 游戏模拟器：LDPlayer
 - 连连看游戏：单机连连看
 
-![app](F:\Program\Python\AutoLink\AutoLinkGames-master\README.assets\app.JPG)
+![app](README.assets/app.JPG)
 
-![menu](F:\Program\Python\AutoLink\AutoLinkGames-master\README.assets\menu.png)
+![menu](README.assets/menu.png)
 
 
 
@@ -38,7 +38,7 @@
 
 ### 2.1 类图
 
-![Logical View](F:\Program\Python\AutoLink\AutoLinkGames-master\README.assets\Logical View.jpg)
+![Logical View](README.assets/Logical View.jpg)
 
 #### 2.1.1 图像获取器
 
@@ -78,7 +78,7 @@
 
 ### 2.2 时序图
 
-![SequenceDiagram1](F:\Program\Python\AutoLink\AutoLinkGames-master\README.assets\SequenceDiagram1.jpg)
+![SequenceDiagram1](README.assets/SequenceDiagram1.jpg)
 
 #### 2.2.1 游戏流程
 
