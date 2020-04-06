@@ -29,7 +29,7 @@
 
 ![app](README.assets/app.JPG)
 
-![menu](README.assets/menu.png)
+<img src="README.assets/menu.png" alt="menu" style="zoom: 33%;" />
 
 
 
