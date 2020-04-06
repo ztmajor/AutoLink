@@ -2,6 +2,7 @@ import cv2
 import numpy
 import os
 import time
+from PIL import Image
 
 import win32gui, win32ui, win32con
 
@@ -32,6 +33,12 @@ def getAppScreen(hwnd):
     # 获取位图信息
     signedIntsArray = saveBitMap.GetBitmapBits(True)
 
+    ###获取位图信息
+    bmpinfo = saveBitMap.GetInfo()
+    bmpstr = saveBitMap.GetBitmapBits(True)
+    ###生成图像
+    im_PIL = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']), bmpstr, 'raw', 'BGRX', 0, 1)
+
     # 内存释放
     win32gui.DeleteObject(saveBitMap.GetHandle())
     saveDC.DeleteDC()
@@ -42,7 +49,7 @@ def getAppScreen(hwnd):
     img = numpy.frombuffer(signedIntsArray, dtype = 'uint8')
     img.shape = (height, width, 4)
     img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
-    return img
+    return img, im_PIL
 
 def match_img(img, tem):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

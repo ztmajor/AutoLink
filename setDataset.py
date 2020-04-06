@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # 图片平移扩充数据集
     # img_create(path)
 
-    # 验证
+    # 验证, 需要在Terminal中输入 python -m visdom.server
     viz = visdom.Visdom()
 
     # 创建数据集

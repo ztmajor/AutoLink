@@ -2,7 +2,7 @@ import cv2
 import numpy
 import os
 import time
-from alexnet import Net
+from MYNet import Net
 import OutputSimulator as outs
 from PIL import Image
 import torch
@@ -14,10 +14,9 @@ global grid_height, grid_width
 
 def createMatrix(game_area):
     global  grid_height, grid_width
-    num_matrix = {}
 
-    grid_height = int(game_area.shape[0] / ROW_NUM)
-    grid_width = int(game_area.shape[1] / COL_NUM)
+    grid_width = int(game_area.size[0] / COL_NUM)
+    grid_height = int(game_area.size[1] / ROW_NUM)
 
     device = torch.device('cuda')
     transform = transforms.Compose([
@@ -37,21 +36,20 @@ def createMatrix(game_area):
                30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
                40, 41)
 
-    num_matrix[0] = {}
-    for col in range(COL_NUM + 2):
-        num_matrix[0][col] = 0
+    num_matrix = numpy.zeros((ROW_NUM + 2, COL_NUM + 2))
     for row in range(ROW_NUM):
-        num_matrix[row + 1] = {}
-        num_matrix[row + 1][0] = 0
         for col in range(COL_NUM):
             grid_left = col * grid_width
             grid_top = row * grid_height
             grid_right = grid_left + grid_width
             grid_bottom = grid_top + grid_height
-            grid_image = game_area[grid_top:grid_bottom, grid_left:grid_right]
+            grid_image = game_area.crop((grid_left, grid_top, grid_right, grid_bottom))
+            # grid_image = game_area[grid_top:grid_bottom, grid_left:grid_right] # opencv
 
-            img = Image.fromarray(grid_image)
-            img = transform(img).unsqueeze(0)
+            img = transform(grid_image).unsqueeze(0)
+            # # opencv 转 PIL
+            # img = Image.fromarray(grid_image)
+            # img = transform(img).unsqueeze(0)
             img_ = img.to(device)
             outputs = mynet(img_)
             _, predicted = torch.max(outputs, 1)
@@ -60,19 +58,15 @@ def createMatrix(game_area):
             num_matrix[row + 1][col + 1] = classes[predicted[0]]
             # cv2.imshow("./IMG/test/"+str(row)+","+str(col)+".jpg", grid_image)
             # cv2.waitKey(0)
-            cv2.imwrite("./IMG/test/("+str(row+1)+","+str(col+1)+")("+ str(classes[predicted[0]])+").jpg", grid_image)
-        num_matrix[row + 1][COL_NUM + 1] = 0
-
-    num_matrix[ROW_NUM + 1] = {}
-    for col in range(COL_NUM + 2):
-        num_matrix[ROW_NUM + 1][col] = 0
+            # cv2.imwrite("./IMG/test/("+str(row+1)+","+str(col+1)+")("+ str(classes[predicted[0]])+").jpg", grid_image)
 
     return num_matrix
 
 # 相对坐标换算
 def point_loc(x1, y1, x2, y2):
     global grid_height, grid_width
-    # 200:788, 30:534]
+
+    # 200:788, 30:534
     game_area_left = 30
     game_area_top = 200
 
@@ -150,8 +144,8 @@ def Dturn2(matrix, x1, y1, x2, y2):
     if (x1 == x2) and (y1 == y2):
         return 0
 
-    for i in range(0, ROW_NUM):
-        for j in range(0, COL_NUM):
+    for i in range(0, ROW_NUM + 2):
+        for j in range(0, COL_NUM + 2):
             # 跳过与A，B点不在同一水平竖直线的点
             if (i != x1) and (i != x2) and (j != y1) and (j != y2):
                 continue
@@ -203,20 +197,31 @@ def removable(matrix, x1, y1, x2, y2):
     return 0
 
 # 计算对应解
-def solve_matrix(matrix, ):
-    # 若不是零矩阵则一直循环
-    #while numpy.where(matrix != 0)[0].shape[0] != 0:
-    for index in range(1):
-        for x1 in range(1, ROW_NUM + 1):
-            for y1 in range(1, COL_NUM + 1):
-                for x2 in range(1, ROW_NUM + 1):
-                    for y2 in range(1, COL_NUM + 1):
-                        if removable(matrix, x1, y1, x2, y2) == 1:
-                            cx1, cy2, cx2, cy2 = point_loc(x1 - 1, y1-1, x2-1, y2-1)
-                            outs.eliminate(cx1 , cy2, cx2, cy2)
-                            matrix[x1][y1] = 0
-                            matrix[x2][y2] = 0
-                            print(matrix)
+def solve_matrix(matrix):
+    for x1 in range(1, ROW_NUM + 1):
+        for y1 in range(1, COL_NUM + 1):
+            for x2 in range(1, ROW_NUM + 1):
+                for y2 in range(1, COL_NUM + 1):
+                    if removable(matrix, x1, y1, x2, y2) == 1:
+                        cx1, cy1, cx2, cy2 = point_loc(x1-1, y1-1, x2-1, y2-1)
+                        outs.eliminate(cx1, cy1, cx2, cy2)
+                        matrix[x1][y1] = 0
+                        matrix[x2][y2] = 0
+                        # print(matrix)
+                        return x1, y1, x2, y2
+
+# 快速计算对应解
+def quick_solve_matrix(matrix):
+    for x1 in range(1, ROW_NUM + 1):
+        for y1 in range(1, COL_NUM + 1):
+            for x2 in range(1, ROW_NUM + 1):
+                for y2 in range(1, COL_NUM + 1):
+                    if removable(matrix, x1, y1, x2, y2) == 1:
+                        cx1, cy1, cx2, cy2 = point_loc(x1-1, y1-1, x2-1, y2-1)
+                        outs.eliminate(cx1, cy1, cx2, cy2)
+                        matrix[x1][y1] = 0
+                        matrix[x2][y2] = 0
+                        # print(matrix)
 
 # 测试运行
 if __name__ == "__main__":
@@ -224,20 +229,21 @@ if __name__ == "__main__":
     game_area = test_img[200:788, 30:534]
     # cv2.imshow("game",game_area)
     # cv2.waitKey(0)
-    matrix = createMatrix(game_area)
-    #
-    # # matrix = [
-    # #     [0, 0, 0, 0, 0, 0, 0],
-    # #     [0, 1, 2, 0, 3, 4, 0],
-    # #     [0, 5, 6, 0, 7, 8, 0],
-    # #     [0, 9, 10, 0, 11, 12, 0],
-    # #     [0, 1, 12, 0, 10, 11, 0],
-    # #     [0, 13, 6, 0, 13, 3, 0],
-    # #     [0, 8, 2, 0, 9, 14, 0],
-    # #     [0, 4, 7, 0, 5, 14, 0],
-    # #     [0, 0, 0, 0, 0, 0, 0]
-    # # ]
-    for row in range(ROW_NUM+2):
-        print(matrix[row])
-    solve_matrix(matrix)
+    # matrix = createMatrix(game_area)
+
+    matrix0 = numpy.zeros((ROW_NUM, COL_NUM))
+    matrix = numpy.zeros((5,6))
+    matrix[4][5] = 1
+
+    if numpy.all(matrix0 == 0):
+        print("0矩阵")
+    else:
+        print("非0矩阵")
+
+    # for row in range(ROW_NUM+2):
+    #     print(matrix[row])
+    # for index in range(ROW_NUM * COL_NUM):
+    #     if numpy.all(matrix == 0):
+    #         break
+    #     solve_matrix(matrix)
     print("done!")
