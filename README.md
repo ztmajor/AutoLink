@@ -29,7 +29,7 @@
 
 ![app](README.assets/app.JPG)
 
-<img src="README.assets/menu.png" alt="menu" style="zoom: 33%;" />
+![menu](README.assets/menu.png)
 
 
 
@@ -38,7 +38,7 @@
 
 ### 2.1 类图
 
-![Logical View](README.assets/Logical View.jpg)
+![Logical View](README.assets/LogicalView.jpg)
 
 #### 2.1.1 图像获取器
 
