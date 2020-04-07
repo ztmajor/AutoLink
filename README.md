@@ -68,6 +68,8 @@
 
 #### 2.1.5 神经网络训练测试器
 
+基于PyTorch
+
 - 模型训练保存：训练CNN模型，并将训练好的模型保存下来
 - 模型测试：测试训练好的模型
 
@@ -156,8 +158,8 @@
 - 配置好环境（最好为对应版本）。
 - 打开雷电模拟器，将其放到屏幕左侧（未实现软件内相对位置坐标点击）
 - 用到的软件、图片、模型和数据集我免费放在CSDN下载中，也可自己下载和训练。
-  - 下载网址：(审核中)[]()
+  - 相关文件CSDN下载网址：[https://download.csdn.net/download/ztmajor/12308823](https://download.csdn.net/download/ztmajor/12308823)
 - 如果需要玩其他模式，请手动设置到对应的`ROW_NUM`和`COL_NUM`。
 - 进入游戏主菜单，运行程序。
 
-- 演示视频：（制作中）[]()
+- 演示视频（bilibili）：[https://www.bilibili.com/video/BV1sK4y1r7Uf](https://www.bilibili.com/video/BV1sK4y1r7Uf)
