@@ -161,5 +161,5 @@
   - 相关文件CSDN下载网址：[https://download.csdn.net/download/ztmajor/12308823](https://download.csdn.net/download/ztmajor/12308823)
 - 如果需要玩其他模式，请手动设置到对应的`ROW_NUM`和`COL_NUM`。
 - 进入游戏主菜单，运行程序。
-
 - 演示视频（bilibili）：[https://www.bilibili.com/video/BV1sK4y1r7Uf](https://www.bilibili.com/video/BV1sK4y1r7Uf)
+- 欢迎关注CSDN博客：[https://ztmajor.blog.csdn.net/article/details/105375481](https://ztmajor.blog.csdn.net/article/details/105375481)
