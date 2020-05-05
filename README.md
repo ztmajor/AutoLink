@@ -7,7 +7,7 @@
 ### 1.1 设备
 
 - CPU：Intel CORE i5
-- 显卡：NVIDIA GTX950M
+- 显卡：NVIDIA GTX950M 2G
 - 内存：12GB
 - 系统：Windows 10
 
